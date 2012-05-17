@@ -6,6 +6,8 @@ import org.apache.thrift.TBase;
 import org.apache.thrift.TDeserializer;
 import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
+import org.apache.thrift.protocol.TBinaryProtocol;
+import org.apache.thrift.protocol.TProtocolFactory;
 
 import com.twitter.elephantbird.util.TypeRef;
 
@@ -14,6 +16,7 @@ public class ThriftConverter<M extends TBase<?, ?>> implements BinaryConverter<M
   public static final Logger LOG = LogManager.getLogger(ThriftConverter.class);
 
   private TypeRef<M> typeRef;
+  private TProtocolFactory protocolFactory;
   private TSerializer serializer;
   private TDeserializer deserializer;
 
@@ -40,14 +43,23 @@ public class ThriftConverter<M extends TBase<?, ?>> implements BinaryConverter<M
     return new ThriftConverter<M>(typeRef);
   }
 
+  public static <M extends TBase<?, ?>> ThriftConverter<M> newInstance(TypeRef<M> typeRef, TProtocolFactory factory) {
+    return new ThriftConverter<M>(typeRef, factory);
+  }
+
   public ThriftConverter(TypeRef<M> typeRef) {
+    this(typeRef, null);
+  }  
+
+  public ThriftConverter(TypeRef<M> typeRef, TProtocolFactory protocol) {
     this.typeRef = typeRef;
+    this.protocolFactory = protocol == null ? new TBinaryProtocol.Factory() : protocol;
   }
 
   @Override
   public M fromBytes(byte[] messageBuffer) {
     if (deserializer == null)
-      deserializer = new TDeserializer();
+      deserializer = new TDeserializer(protocolFactory);
     try {
       M message = typeRef.safeNewInstance();
       deserializer.deserialize(message, messageBuffer);
@@ -61,7 +73,7 @@ public class ThriftConverter<M extends TBase<?, ?>> implements BinaryConverter<M
   @Override
   public byte[] toBytes(M message) {
     if (serializer == null)
-      serializer = new TSerializer();
+      serializer = new TSerializer(protocolFactory);
     try {
       return serializer.serialize(message);
     } catch (TException e) {

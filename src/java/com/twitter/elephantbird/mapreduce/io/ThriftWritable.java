@@ -1,7 +1,7 @@
 package com.twitter.elephantbird.mapreduce.io;
 
 import org.apache.thrift.TBase;
-
+import org.apache.thrift.protocol.TProtocolFactory;
 import com.twitter.elephantbird.util.TypeRef;
 
 /**
@@ -20,11 +20,11 @@ public class ThriftWritable<M extends TBase<?, ?>> extends BinaryWritable<M> {
   }
 
   public ThriftWritable(TypeRef<M> typeRef) {
-    this(null, typeRef);
+    this(null, typeRef, null);
   }
 
-  public ThriftWritable(M message, TypeRef<M> typeRef) {
-    super(message, new ThriftConverter<M>(typeRef));
+  public ThriftWritable(M message, TypeRef<M> typeRef, TProtocolFactory protocol) {
+    super(message, new ThriftConverter<M>(typeRef, protocol));
   }
 
   @Override
